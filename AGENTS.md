@@ -8,5 +8,5 @@
 * **Responsibilities**:
   - Updating `bin/vibe-init.sh`.
   - Refining `templates/`.
-  - Managing `docs/`.
+  - Managing `docs/` and `CHANGELOG.md`.
   - **Commit Protocol**: ALWAYS use `bin/smart-commit -m "..."` for this repo. Do NOT use `git commit` directly.
