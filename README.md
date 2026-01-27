@@ -9,12 +9,13 @@ A no-nonsense toolkit for setting up **AI Agentic Contexts**, skills, and workfl
 - **Unified Agentic Setup**: Pre-configured roles for Backend, Frontend, BA, QA, and DevOps.
 - **Boilerplate Reduction**: Instant scaffolding for Java (Spring Boot) and React (Vite) projects.
 - **Strict Standards**: Enforced Clean Architecture and atomic operations.
+- **[UI/UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)**: Includes integrated design system generation and strict visual guidelines.
 
 ## 🛠 Usage
 Initialize a new project with the unified agent team:
+Run directly from terminal (No Clone Required)
 
 ```bash
-# Run directly from terminal (No Clone Required)
 /bin/bash -c "$(curl -fsSL https://github.com/hunghlh98/vibe-kit/raw/main/bin/vibe-init.sh)"
 ```
 
