@@ -9,7 +9,8 @@ To ensure every commit is semantic and incrementally versions the project.
 
 ## 2. Prerequisites
 - `scripts/smart-commit.sh` must exist.
-- A version source (`VERSION`, `package.json`, or `pom.xml`) must exist.
+## 2. Prerequisites
+- `scripts/smart-commit.sh` must exist.
 
 ## 3. Workflow Steps
 1.  **Stage Changes**: `git add <files>`
@@ -20,5 +21,5 @@ To ensure every commit is semantic and incrementally versions the project.
     *Example*: `./scripts/smart-commit.sh -m "feat(auth): add login endpoint"`
 
 ## 4. Outcome
-- Version is bumped (Patch level).
 - Changes are committed with standard message.
+- **Note**: Version bumping happens only during Release (`./scripts/release.sh`).

@@ -39,4 +39,4 @@ description: Semantic Git Commit standards (Conventional Commits).
 ## 5. Tooling
 - **Script**: `./scripts/smart-commit.sh`
 - **Usage**: `./scripts/smart-commit.sh -m "<type>: <msg>"`
-- **Effect**: Automatically bumps patch version (in `package.json`, `pom.xml`, or `VERSION`) and creates commit.
+- **Effect**: Creates a commit with the specified message. Does NOT bump version (handled by `release.sh`).
