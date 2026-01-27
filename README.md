@@ -15,7 +15,7 @@ Initialize a new project with the unified agent team:
 
 ```bash
 # Run directly from terminal (No Clone Required)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/hunghlh98/vibe-kit/main/bin/vibe-init.sh)"
+/bin/bash -c "$(curl -fsSL https://github.com/hunghlh98/vibe-kit/raw/main/bin/vibe-init.sh)"
 ```
 
 Or clone and run manually:
