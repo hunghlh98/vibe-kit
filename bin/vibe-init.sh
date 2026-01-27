@@ -17,16 +17,7 @@ BLUE='\033[0;34m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# Read Version (locally or from cache)
-VERSION="Unknown"
-if [ -f "$VIBE_KIT_CACHE/VERSION" ]; then
-    VERSION=$(cat "$VIBE_KIT_CACHE/VERSION")
-    # Clean up newline if present
-    VERSION=$(echo "$VERSION" | tr -d '\n')
-fi
 
-echo -e "${BLUE}🌌 VIBE-KIT v${VERSION}: Antigravity Agentic Scaffolder${NC}"
-echo "=============================================="
 
 function fetch_assets() {
     # echo -e "${BLUE}📦 Checking Vibe Kit Assets...${NC}"
@@ -50,8 +41,18 @@ function fetch_assets() {
     fi
 }
 
-# Fetch assets immediately
+# Fetch assets immediately to ensure we have the latest core & version
 fetch_assets
+
+# Read Version from the freshly fetched cache
+VERSION="Unknown"
+if [ -f "$VIBE_KIT_CACHE/VERSION" ]; then
+    VERSION=$(cat "$VIBE_KIT_CACHE/VERSION")
+    VERSION=$(echo "$VERSION" | tr -d '\n')
+fi
+
+echo -e "${BLUE}🌌 VIBE-KIT v${VERSION}: Antigravity Agentic Scaffolder${NC}"
+echo "=============================================="
 
 # Set paths to cached assets
 TEMPLATES_DIR="$VIBE_KIT_CACHE/templates"

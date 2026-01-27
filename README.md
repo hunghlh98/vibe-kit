@@ -14,6 +14,12 @@ A no-nonsense toolkit for setting up **AI Agentic Contexts**, skills, and workfl
 Initialize a new project with the unified agent team:
 
 ```bash
+# Run directly from terminal (No Clone Required)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/hunghlh98/vibe-kit/main/bin/vibe-init.sh)"
+```
+
+Or clone and run manually:
+```bash
 ./bin/vibe-init.sh
 ```
 
