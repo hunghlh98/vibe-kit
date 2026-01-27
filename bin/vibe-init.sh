@@ -8,12 +8,8 @@
 set -e # Exit immediately if a command exits with a non-zero status
 
 # --- 1. CONFIGURATION & PATHS ---
-# Determine the root directory of the vibe-kit repo based on this script's location
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VIBE_KIT_ROOT="$(dirname "$SCRIPT_DIR")"
-TEMPLATES_DIR="$VIBE_KIT_ROOT/templates"
-SKILLS_DIR="$VIBE_KIT_ROOT/.agent/skills"
-WORKFLOWS_DIR="$VIBE_KIT_ROOT/.agent/workflows"
+VIBE_KIT_REPO="https://github.com/hunghlh98/vibe-kit.git"
+VIBE_KIT_CACHE="$HOME/.vibe-kit/cache"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -21,8 +17,48 @@ BLUE='\033[0;34m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}🌌 VIBE-KIT: Antigravity Agentic Scaffolder${NC}"
+# Read Version (locally or from cache)
+VERSION="Unknown"
+if [ -f "$VIBE_KIT_CACHE/VERSION" ]; then
+    VERSION=$(cat "$VIBE_KIT_CACHE/VERSION")
+    # Clean up newline if present
+    VERSION=$(echo "$VERSION" | tr -d '\n')
+fi
+
+echo -e "${BLUE}🌌 VIBE-KIT v${VERSION}: Antigravity Agentic Scaffolder${NC}"
 echo "=============================================="
+
+function fetch_assets() {
+    # echo -e "${BLUE}📦 Checking Vibe Kit Assets...${NC}"
+    mkdir -p "$VIBE_KIT_CACHE"
+    
+    if [ -d "$VIBE_KIT_CACHE/.git" ]; then
+        pushd "$VIBE_KIT_CACHE" > /dev/null
+        git fetch -q origin main
+        local LOCAL=$(git rev-parse HEAD)
+        local REMOTE=$(git rev-parse origin/main)
+        
+        if [ "$LOCAL" != "$REMOTE" ]; then
+             echo -e "${BLUE}📦 New Vibe Kit version found. Updating...${NC}"
+             git reset --hard -q origin/main
+             echo -e "${GREEN}  ✓ Updated to latest.${NC}"
+        fi
+        popd > /dev/null
+    else
+        echo -e "${BLUE}📦 Installing Vibe Kit Assets...${NC}"
+        git clone -q "$VIBE_KIT_REPO" "$VIBE_KIT_CACHE"
+    fi
+}
+
+# Fetch assets immediately
+fetch_assets
+
+# Set paths to cached assets
+TEMPLATES_DIR="$VIBE_KIT_CACHE/templates"
+SKILLS_DIR="$VIBE_KIT_CACHE/.agent/skills"
+WORKFLOWS_DIR="$VIBE_KIT_CACHE/.agent/workflows"
+
+
 
 # --- 2. HELPER FUNCTIONS ---
 
@@ -76,21 +112,43 @@ function inject_antigravity_brain() {
     fi
 
     # 3. Inject Documentation Templates
-    cp -r "$TEMPLATES_DIR/docs/"* "$TARGET_DIR/docs/" 2>/dev/null || true
+    cp -r "$SKILLS_DIR/documentation/templates/"* "$TARGET_DIR/docs/" 2>/dev/null || true
     
-    # 4. Inject Core Skills (Common)
-    cp -r "$SKILLS_DIR/core" "$TARGET_DIR/.agent/skills/"
+    # NEW: Inject Scripts
+    mkdir -p "$TARGET_DIR/scripts"
+    if [ -d "$TEMPLATES_DIR/scripts" ]; then
+        cp "$TEMPLATES_DIR/scripts/"* "$TARGET_DIR/scripts/"
+        chmod +x "$TARGET_DIR/scripts/"*.sh
+    fi
+    
+    # 4. Inject Core Skills (Foundation + Documentation + Clean Architecture + Git Commit)
+    cp -r "$SKILLS_DIR/foundation" "$TARGET_DIR/.agent/skills/"
+    cp -r "$SKILLS_DIR/documentation" "$TARGET_DIR/.agent/skills/"
+    cp -r "$SKILLS_DIR/clean-architecture" "$TARGET_DIR/.agent/skills/"
+    cp -r "$SKILLS_DIR/git-commit" "$TARGET_DIR/.agent/skills/"
 
     # 5. Inject Specialized Skills & Workflows
     if [ "$PROJECT_TYPE" == "backend" ]; then
         cp -r "$SKILLS_DIR/java" "$TARGET_DIR/.agent/skills/"
-        # Copy backend-specific workflows if they exist
-        [ -f "$WORKFLOWS_DIR/backend-lifecycle.md" ] && cp "$WORKFLOWS_DIR/backend-lifecycle.md" "$TARGET_DIR/.agent/workflows/"
+        # Copy backend-specific workflows
+        [ -f "$WORKFLOWS_DIR/workflow-be.md" ] && cp "$WORKFLOWS_DIR/workflow-be.md" "$TARGET_DIR/.agent/workflows/"
         
     elif [ "$PROJECT_TYPE" == "frontend" ]; then
-        cp -r "$SKILLS_DIR/frontend" "$TARGET_DIR/.agent/skills/"
-        # Copy frontend-specific workflows if they exist
-        [ -f "$WORKFLOWS_DIR/frontend-lifecycle.md" ] && cp "$WORKFLOWS_DIR/frontend-lifecycle.md" "$TARGET_DIR/.agent/workflows/"
+        cp -r "$SKILLS_DIR/react-vite" "$TARGET_DIR/.agent/skills/"
+        # Copy frontend-specific workflows
+        [ -f "$WORKFLOWS_DIR/workflow-fe.md" ] && cp "$WORKFLOWS_DIR/workflow-fe.md" "$TARGET_DIR/.agent/workflows/"
+    fi
+    
+    # Inject Common Workflows (BA, QA, DevOps, Git Commit)
+    [ -f "$WORKFLOWS_DIR/workflow-ba.md" ] && cp "$WORKFLOWS_DIR/workflow-ba.md" "$TARGET_DIR/.agent/workflows/"
+    [ -f "$WORKFLOWS_DIR/workflow-qa.md" ] && cp "$WORKFLOWS_DIR/workflow-qa.md" "$TARGET_DIR/.agent/workflows/"
+    [ -f "$WORKFLOWS_DIR/workflow-devops.md" ] && cp "$WORKFLOWS_DIR/workflow-devops.md" "$TARGET_DIR/.agent/workflows/"
+    [ -f "$WORKFLOWS_DIR/workflow-git-commit.md" ] && cp "$WORKFLOWS_DIR/workflow-git-commit.md" "$TARGET_DIR/.agent/workflows/"
+    
+    # Inject Git Commit Skills Scripts
+    if [ -d "$SKILLS_DIR/git-commit/scripts" ]; then
+        cp "$SKILLS_DIR/git-commit/scripts/"* "$TARGET_DIR/scripts/" 2>/dev/null || true
+        chmod +x "$TARGET_DIR/scripts/"*.sh
     fi
 
     echo -e "${GREEN}✓ Brain Injection Complete.${NC}"
@@ -177,8 +235,8 @@ function scaffold_frontend() {
     npm install -D tailwindcss postcss autoprefixer
     npx tailwindcss init -p
     
-    # Fetch external skills first so they are ready
-    fetch_external_skills
+    # Fetch external skills (Disabled for strict vibe-kit)
+    # fetch_external_skills
     
     # Inject Brain (Using "." as target since we are inside the folder)
     inject_antigravity_brain "." "frontend"
