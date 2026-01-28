@@ -302,9 +302,60 @@ function scaffold_frontend() {
     echo "Installing Dependencies..."
     npm install
     
-    echo "Initializing Tailwind CSS v4..."
-    npm install -D tailwindcss postcss autoprefixer
-    npx tailwindcss init -p
+    echo "Initializing Tailwind CSS v4 (@tailwindcss/vite)..."
+    npm install tailwindcss @tailwindcss/vite@4.1.12
+    npm install -D @types/node
+
+    # Configure Vite for Tailwind v4 (Adapted from Mowise reference)
+    echo "Configuring Vite..."
+    cat > vite.config.ts <<EOF
+import { defineConfig } from 'vite'
+import path from 'path'
+import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/plugin-react'
+import { execSync } from 'child_process'
+import pkg from './package.json'
+
+// Attempt to get git info, fallback to package version
+let commitHash = 'unknown'
+let version = pkg.version
+
+try {
+  commitHash = execSync('git rev-parse --short HEAD').toString().trim()
+  version = execSync('git describe --tags --abbrev=0').toString().trim()
+} catch {
+  console.log('Git info not available, using defaults')
+}
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(version),
+    __COMMIT_HASH__: JSON.stringify(commitHash),
+  },
+  plugins: [
+    react(),
+    tailwindcss(),
+  ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+})
+EOF
+
+    # Configure CSS for Tailwind v4
+    echo "Configuring CSS..."
+    echo '@import "tailwindcss";' > src/index.css
+    
+    # Update tsconfig.app.json for alias (if it exists) to support @/
+    if [ -f "tsconfig.app.json" ]; then
+        # Simple sed to inject paths if not present (Not perfect but helps)
+        # Ideally we'd use a json tool, but for bash script this is a quick patch
+        # or we just rely on user to update tsconfig for the alias.
+        echo "Note: You may need to update tsconfig.app.json 'paths' to support '@/*' alias."
+    fi
     
     # Inject Brain (Using "." as target since we are inside the folder)
     inject_antigravity_brain "." "frontend"
