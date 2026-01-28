@@ -6,6 +6,7 @@ description: DevOps Workflow (Release & Deployment)
 
 ## 1. Prime Directive: Automation First
 - **Tooling**: Prefer scripts over manual commands.
+- **Tool**: Use `.agent/skills/brainstorming/SKILL.md` when designing complex automation scripts.
 - **Scripts Location**: `./scripts/` (Injected by Vibe Kit).
 
 ## 2. Release Management

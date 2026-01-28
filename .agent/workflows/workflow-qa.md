@@ -6,6 +6,7 @@ description: Quality Assurance Workflow (Validation)
 
 ## 1. Test Planning
 - **Input**: `docs/FRS.md` and `docs/USER_STORIES.md`.
+- **Tool**: Use `.agent/skills/brainstorming/SKILL.md` to generate comprehensive test scenarios and edge cases.
 - **Action**: Create `docs/TEST_PLAN.md`.
   - Define Test Cases (Happy Path, Edge Cases, Error States).
 

@@ -1,26 +1,79 @@
 #!/bin/bash
 set -e
 
+# ==============================================================================
+# SMART COMMIT
+# Purpose: Bump version (Major/Minor/Patch), Stage all changes, and Commit.
+# Usage: ./bin/smart-commit [--major|--minor|--patch] -m "Message"
+# ==============================================================================
+
 # Setup paths
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION_FILE="$BASE_DIR/VERSION"
 
-# 1. Read current version
+# Default Bump Type
+BUMP_TYPE="patch"
+COMMIT_ARGS=()
+
+# 1. Parse Arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --major)
+            BUMP_TYPE="major"
+            shift
+            ;;
+        --minor)
+            BUMP_TYPE="minor"
+            shift
+            ;;
+        --patch)
+            BUMP_TYPE="patch"
+            shift
+            ;;
+        *)
+            COMMIT_ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# 2. Read and Initialize Version
 if [ ! -f "$VERSION_FILE" ]; then
     echo "1.0.0" > "$VERSION_FILE"
 fi
 
 CURRENT_VERSION=$(cat "$VERSION_FILE")
+# Ensure version has 3 parts (X.Y.Z)
+if [[ ! "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Warning: Invalid version format '$CURRENT_VERSION'. Resetting to 1.0.0"
+    CURRENT_VERSION="1.0.0"
+fi
+
 IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
 
-# 2. Increment Patch Version
-new_patch=$((patch + 1))
-NEW_VERSION="$major.$minor.$new_patch"
+# 3. Calculate New Version
+if [ "$BUMP_TYPE" == "major" ]; then
+    major=$((major + 1))
+    minor=0
+    patch=0
+    echo "🚀 Triggering MAJOR version bump!"
+elif [ "$BUMP_TYPE" == "minor" ]; then
+    minor=$((minor + 1))
+    patch=0
+    echo "✨ Triggering MINOR version bump!"
+else
+    patch=$((patch + 1))
+fi
 
-# 3. Update File
+NEW_VERSION="$major.$minor.$patch"
+
+# 4. Update Version File
 echo "$NEW_VERSION" > "$VERSION_FILE"
 echo "🔖 Bumped version: $CURRENT_VERSION -> $NEW_VERSION"
 
-# 4. Git Commit
-git add "$VERSION_FILE"
-git commit "$@"
+# 5. Git Stage & Commit
+echo "📦 Staging all changes..."
+git add .
+
+echo "💾 Committing..."
+git commit "${COMMIT_ARGS[@]}"
