@@ -293,7 +293,8 @@ function scaffold_frontend() {
     
     # Create Vite Project (React + TypeScript)
     # If project_name is ".", vite scaffolds in current dir
-    npm create vite@latest "$project_name" -- --template react-ts
+    # Use npx -y to avoid interactive prompts and potential script interruption
+    npx -y create-vite@latest "$project_name" --template react-ts
     
     # Pushd/Popd to handle directory change safely
     pushd "$project_name" > /dev/null
