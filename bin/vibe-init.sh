@@ -380,11 +380,11 @@ read -p "Enter choice [1/2/3]: " choice
 
 if [ "$choice" == "1" ]; then
     scaffold_backend
-    echo "  -> Next: cd <artifact-id> && ./mvnw clean install"
+    echo "  -> Next: ./mvnw clean install"
 
 elif [ "$choice" == "2" ]; then
     scaffold_frontend
-    echo "  -> Next: cd <project-name> && npm run dev"
+    echo "  -> Next: npm run dev"
 
 elif [ "$choice" == "3" ]; then
     echo -e "\n${BLUE}🚀 Initializing Full Stack Project...${NC}"
