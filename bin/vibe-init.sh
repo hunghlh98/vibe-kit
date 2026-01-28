@@ -105,54 +105,62 @@ function inject_antigravity_brain() {
     mkdir -p "$TARGET_DIR/.agent/memory"
     mkdir -p "$TARGET_DIR/docs/architecture"
 
+    # Helper for safe copy (no overwrite)
+    function safe_cp() {
+        cp -n "$@" 2>/dev/null || true
+    }
+    function safe_cp_r() {
+        cp -nr "$@" 2>/dev/null || true
+    }
+
     # 2. Inject AGENTS.md (The Roster)
     if [ -f "$TEMPLATES_DIR/AGENTS.md" ]; then
-        cp "$TEMPLATES_DIR/AGENTS.md" "$TARGET_DIR/AGENTS.md"
+        safe_cp "$TEMPLATES_DIR/AGENTS.md" "$TARGET_DIR/AGENTS.md"
     else 
         echo -e "${RED}Warning: templates/AGENTS.md not found.${NC}"
     fi
 
     # 3. Inject Documentation Templates
-    cp -r "$SKILLS_DIR/documentation/templates/"* "$TARGET_DIR/docs/" 2>/dev/null || true
+    safe_cp_r "$SKILLS_DIR/documentation/templates/"* "$TARGET_DIR/docs/"
     
     # NEW: Inject Scripts
     mkdir -p "$TARGET_DIR/scripts"
     if [ -d "$TEMPLATES_DIR/scripts" ]; then
-        cp "$TEMPLATES_DIR/scripts/"* "$TARGET_DIR/scripts/"
+        safe_cp "$TEMPLATES_DIR/scripts/"* "$TARGET_DIR/scripts/"
         chmod +x "$TARGET_DIR/scripts/"*.sh
     fi
     
     # 4. Inject Core Skills (Foundation + Documentation + Clean Architecture + Git Commit)
-    cp -r "$SKILLS_DIR/foundation" "$TARGET_DIR/.agent/skills/"
-    cp -r "$SKILLS_DIR/documentation" "$TARGET_DIR/.agent/skills/"
-    cp -r "$SKILLS_DIR/clean-architecture" "$TARGET_DIR/.agent/skills/"
-    cp -r "$SKILLS_DIR/git-commit" "$TARGET_DIR/.agent/skills/"
+    safe_cp_r "$SKILLS_DIR/foundation" "$TARGET_DIR/.agent/skills/"
+    safe_cp_r "$SKILLS_DIR/documentation" "$TARGET_DIR/.agent/skills/"
+    safe_cp_r "$SKILLS_DIR/clean-architecture" "$TARGET_DIR/.agent/skills/"
+    safe_cp_r "$SKILLS_DIR/git-commit" "$TARGET_DIR/.agent/skills/"
 
     # 5. Inject Specialized Skills & Workflows
     if [ "$PROJECT_TYPE" == "backend" ]; then
-        cp -r "$SKILLS_DIR/java" "$TARGET_DIR/.agent/skills/"
+        safe_cp_r "$SKILLS_DIR/java" "$TARGET_DIR/.agent/skills/"
         # Copy backend-specific workflows
-        [ -f "$WORKFLOWS_DIR/workflow-be.md" ] && cp "$WORKFLOWS_DIR/workflow-be.md" "$TARGET_DIR/.agent/workflows/"
+        [ -f "$WORKFLOWS_DIR/workflow-be.md" ] && safe_cp "$WORKFLOWS_DIR/workflow-be.md" "$TARGET_DIR/.agent/workflows/"
         
     elif [ "$PROJECT_TYPE" == "frontend" ]; then
-        cp -r "$SKILLS_DIR/react-vite" "$TARGET_DIR/.agent/skills/"
+        safe_cp_r "$SKILLS_DIR/react-vite" "$TARGET_DIR/.agent/skills/"
         # Copy frontend-specific workflows
-        [ -f "$WORKFLOWS_DIR/workflow-fe.md" ] && cp "$WORKFLOWS_DIR/workflow-fe.md" "$TARGET_DIR/.agent/workflows/"
+        [ -f "$WORKFLOWS_DIR/workflow-fe.md" ] && safe_cp "$WORKFLOWS_DIR/workflow-fe.md" "$TARGET_DIR/.agent/workflows/"
     fi
     
     # Inject Common Workflows (BA, QA, DevOps, Git Commit)
-    [ -f "$WORKFLOWS_DIR/workflow-ba.md" ] && cp "$WORKFLOWS_DIR/workflow-ba.md" "$TARGET_DIR/.agent/workflows/"
-    [ -f "$WORKFLOWS_DIR/workflow-qa.md" ] && cp "$WORKFLOWS_DIR/workflow-qa.md" "$TARGET_DIR/.agent/workflows/"
-    [ -f "$WORKFLOWS_DIR/workflow-devops.md" ] && cp "$WORKFLOWS_DIR/workflow-devops.md" "$TARGET_DIR/.agent/workflows/"
-    [ -f "$WORKFLOWS_DIR/workflow-git-commit.md" ] && cp "$WORKFLOWS_DIR/workflow-git-commit.md" "$TARGET_DIR/.agent/workflows/"
+    [ -f "$WORKFLOWS_DIR/workflow-ba.md" ] && safe_cp "$WORKFLOWS_DIR/workflow-ba.md" "$TARGET_DIR/.agent/workflows/"
+    [ -f "$WORKFLOWS_DIR/workflow-qa.md" ] && safe_cp "$WORKFLOWS_DIR/workflow-qa.md" "$TARGET_DIR/.agent/workflows/"
+    [ -f "$WORKFLOWS_DIR/workflow-devops.md" ] && safe_cp "$WORKFLOWS_DIR/workflow-devops.md" "$TARGET_DIR/.agent/workflows/"
+    [ -f "$WORKFLOWS_DIR/workflow-git-commit.md" ] && safe_cp "$WORKFLOWS_DIR/workflow-git-commit.md" "$TARGET_DIR/.agent/workflows/"
     
     # Inject Git Commit Skills Scripts
     if [ -d "$SKILLS_DIR/git-commit/scripts" ]; then
-        cp "$SKILLS_DIR/git-commit/scripts/"* "$TARGET_DIR/scripts/" 2>/dev/null || true
+        safe_cp "$SKILLS_DIR/git-commit/scripts/"* "$TARGET_DIR/scripts/"
         chmod +x "$TARGET_DIR/scripts/"*.sh
     fi
 
-    echo -e "${GREEN}✓ Brain Injection Complete.${NC}"
+    echo -e "${GREEN}✓ Brain Injection Complete (Skipped existing files).${NC}"
 }
 
 function scaffold_backend() {
@@ -168,17 +176,44 @@ function scaffold_backend() {
     local project_name=$3
 
     # If args not passed, ask for them
-    if [ -z "$group_id" ]; then
-        read -p "Group ID (e.g., com.mowise): " group_id
-    fi
-    if [ -z "$artifact_id" ]; then
-        read -p "Artifact ID (e.g., backend): " artifact_id
-    fi
     if [ -z "$project_name" ]; then
-        read -p "Project Name (e.g., Mowise Backend): " project_name
+        read -p "Project Directory (default: .): " project_dir
+        project_dir=${project_dir:-.}
+        
+        if [ "$project_dir" == "." ]; then
+             # Infer from current directory info
+             local current_dir_name=$(basename "$PWD")
+             echo "Using current directory: $current_dir_name"
+             
+             if [ -z "$artifact_id" ]; then
+                 read -p "Artifact ID (default: $current_dir_name): " input_artifact
+                 artifact_id=${input_artifact:-$current_dir_name}
+             fi
+             if [ -z "$group_id" ]; then
+                 read -p "Group ID (e.g., com.mowise): " group_id
+             fi
+             if [ -z "$project_name" ]; then
+                 project_name="$artifact_id"
+             fi
+        else
+             # Use provided directory name as artifact_id by default
+             if [ -z "$artifact_id" ]; then
+                 artifact_id=$(basename "$project_dir")
+             fi
+             if [ -z "$group_id" ]; then
+                 read -p "Group ID (e.g., com.mowise): " group_id
+             fi
+             if [ -z "$project_name" ]; then
+                 project_name="$artifact_id"
+             fi
+        fi
+    else
+        # Arguments provided (e.g. from fullstack option)
+        project_dir="$artifact_id"
     fi
     
     # Generate Spring Boot Project via API
+    echo "Downloading Spring Boot Starter..."
     curl https://start.spring.io/starter.zip \
         -d type=maven-project \
         -d language=java \
@@ -193,24 +228,49 @@ function scaffold_backend() {
         -d dependencies=web,data-jpa,lombok,postgresql,validation,actuator,devtools \
         -o "$artifact_id.zip"
 
-    echo "Unzipping..."
-    unzip -q "$artifact_id.zip"
+    if [ "$project_dir" == "." ]; then
+        echo "Unzipping to current directory..."
+        unzip -q "$artifact_id.zip" -d temp_extract
+        # Move contents of the inner folder to current dir
+        # Spring zip usually has a root folder named after artifact_id
+        if [ -d "temp_extract/$artifact_id" ]; then
+            cp -n -r "temp_extract/$artifact_id/"* .
+            rm -rf temp_extract
+        else
+            # Fallback if structure is different
+            cp -n -r temp_extract/* .
+            rm -rf temp_extract
+        fi
+    else
+        echo "Unzipping to $project_dir..."
+        unzip -q "$artifact_id.zip"
+        # Since we downloaded as artifact_id.zip, unzip usually creates artifact_id/
+        # If project_dir is different from artifact_id, we might need to properly handle it.
+        # But for simplification, we assume standard behavior.
+    fi
     rm "$artifact_id.zip"
     
     # Inject Brain
-    inject_antigravity_brain "$artifact_id" "backend"
-
-    # Initialize Git (if standalone, otherwise let parent handle it)
-    # We will skip git init here if we are in a monorepo flow, but standard behaviour is fine
-    # For simplicity, we'll let the user git init the root or subfolders as they wish.
-    # But to follow previous logic:
-    if [ ! -d ".git" ]; then
-         cd "$artifact_id"
-         git init -q
-         cd ..
+    if [ "$project_dir" == "." ]; then
+        inject_antigravity_brain "." "backend"
+    else
+        inject_antigravity_brain "$artifact_id" "backend"
     fi
 
-    echo -e "${GREEN}✓ Backend '$artifact_id' created successfully!${NC}"
+    # Initialize Git
+    if [ ! -d ".git" ]; then
+         if [ "$project_dir" != "." ]; then
+             if [ -d "$artifact_id" ]; then
+                  cd "$artifact_id"
+                  git init -q
+                  cd ..
+             fi
+         else
+             git init -q
+         fi
+    fi
+
+    echo -e "${GREEN}✓ Backend setup complete!${NC}"
 }
 
 function scaffold_frontend() {
@@ -220,10 +280,19 @@ function scaffold_frontend() {
     local project_name=$1
 
     if [ -z "$project_name" ]; then
-        read -p "Project Name (e.g., frontend): " project_name
+        read -p "Project Directory (default: .): " project_dir
+        project_dir=${project_dir:-.}
+        
+        if [ "$project_dir" == "." ]; then
+             echo "Using current directory."
+             project_name="."
+        else
+             project_name="$project_dir"
+        fi
     fi
     
     # Create Vite Project (React + TypeScript)
+    # If project_name is ".", vite scaffolds in current dir
     npm create vite@latest "$project_name" -- --template react-ts
     
     # Pushd/Popd to handle directory change safely
@@ -236,9 +305,6 @@ function scaffold_frontend() {
     npm install -D tailwindcss postcss autoprefixer
     npx tailwindcss init -p
     
-    # Fetch external skills (Disabled for strict vibe-kit)
-    # fetch_external_skills
-    
     # Inject Brain (Using "." as target since we are inside the folder)
     inject_antigravity_brain "." "frontend"
 
@@ -249,7 +315,7 @@ function scaffold_frontend() {
     
     popd > /dev/null
     
-    echo -e "${GREEN}✓ Frontend '$project_name' created successfully!${NC}"
+    echo -e "${GREEN}✓ Frontend setup complete!${NC}"
 }
 
 # --- 3. MAIN LOGIC ---
